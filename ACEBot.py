@@ -31,14 +31,13 @@ class acebot:
         return self.history[CID]
     def hasReply(self,message):
         return 'reply_count' in message
-    def getReply(self,message,CID):
-        ts = message['ts']
-        if ChannelID not in self.replies or ts not in self.replies[CID]:
-            self.replies[CID][ts] = self.apiCall("conversations.replies",channel=CID,ts=ts)
-        return self.replies[CID][ts]
     def getReplies(self,message,CID):
-        for reply in getReply(message,CID):
-            yield reply
+        replies = self.apiCall("conversations.replies", channel=CID, ts=message['ts'])
+        replyData = replies['messages']
+        replyText = []
+        for text in replyData:
+            replyText.append(text['text'])
+        return replyText
     def getURI(self,url):
         if 'spotify' in url:
             return re.search('(?<=track\/)(.+?)(?=\?)',url).group()
@@ -50,7 +49,7 @@ class acebot:
     def gatherReplyHistory(self,history,CID):
         for message in history['messages']:
             if self.hasReply(message):
-                self.getReply(message,CID)
+                self.getReplies(message,CID)
     def iterateFullHistory(self,CID):
         if CID not in self.history:
             self.getConversationHistory(CID)

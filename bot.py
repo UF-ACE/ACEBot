@@ -11,7 +11,9 @@ for channel in channelList['channels']:
         break
 history=sc.api_call("conversations.history",channel=id)
 urls=[]
+# loop through every message and append to urls
 for message in history['messages']:
+    # if there's a reply thread in a message
     if 'reply_count' in message:
         replies=sc.api_call("conversations.replies",channel=id,ts=message['ts'])
         for reply in replies['messages']:
