@@ -12,7 +12,12 @@ class acebot:
         self.channelIDs = {}
         self.aceTunesURI = set()
     def apiCall(self, method, **kwargs):
-        return self.sc.api_call(method,**kwargs)
+        response = self.sc.api_call(method,**kwargs)
+        if not response['ok']:
+            print(response['error'])
+        if 'has_more' in response and response['has_more']:
+            print("Has More")
+        return response
     def updateChannelList(self):
         self.channelList=self.apiCall("conversations.list",exclude_archived=1)
         for channel in self.channelList['channels']:
@@ -25,18 +30,25 @@ class acebot:
             return self.channelIDs[name]
         else:
             return None
+    def refreshConversationHistory(self,CID):
+        self.history[CID] =  self.apiCall("conversations.history",channel=CID)
     def getConversationHistory(self,CID):
         if CID not in self.history:
-            self.history[CID] =  self.apiCall("conversations.history",channel=CID)
+            self.refreshConversationHistory(CID)
         return self.history[CID]
     def hasReply(self,message):
         return 'reply_count' in message
-    def getReply(self,message,CID):
+    def refreshReply(self,message,CID):
         ts = message['ts']
         if CID not in self.replies:
             self.replies[CID] = {}
-        if ts not in self.replies[CID]:
-            self.replies[CID][ts] = self.apiCall("conversations.replies",channel=CID,ts=ts)
+        self.replies[CID][ts] = self.apiCall("conversations.replies",channel=CID,ts=ts)
+    def getReply(self,message,CID):
+        ts = message['ts']
+        if CID not in self.replies:
+            self.refreshReply(message,CID)
+        elif ts not in self.replies[CID]:
+            self.refreshReply(message,CID)
         return self.replies[CID][ts]
     def getReplies(self,message,CID):
         for reply in self.getReply(message,CID):
@@ -44,6 +56,7 @@ class acebot:
     def getURI(self,url):
         if 'spotify' in url:
             return re.search('(?<=track\/)(.+?)(?=\?)',url).group()
+        print("Not Matched: " + url)
         return None
     def getAttachmentLinks(self,message):
         if 'attachments' in message:
@@ -54,8 +67,7 @@ class acebot:
             if self.hasReply(message):
                 self.getReply(message,CID)
     def iterateFullHistory(self,CID):
-        if CID not in self.history:
-            self.getConversationHistory(CID)
+        self.getConversationHistory(CID)
         for message in self.history[CID]['messages']:
             if self.hasReply(message):
                 yield self.getReplies(message,CID)
@@ -68,6 +80,22 @@ class acebot:
     def scrapeACETunes(self):
         CID = self.getChannelID('ace-tunes')
         for url in self.iterateAttachmentLinks(CID):
-            self.aceTunesURI.add(self.getURI(url))
+            uri = self.getURI(url)
+            if uri:
+                self.aceTunesURI.add(uri)
         return self.aceTunesURI
+    def getEmojiRanking(self,channelName):
+        CID = self.getChannelID(channelName)
+        emoji = {}
+        for message in self.iterateFullHistory(CID):
+            if 'reactions' in message:
+                for react in message['reactions']:
+                    if not react['name'] in emoji:
+                        emoji[react['name']] = 0
+                    emoji[react['name']] += react['count']
+        emoji = list(emoji.items())
+        return(sorted(emoji,key=lambda x: x[1]))
 
+bot = acebot()
+#print(bot.scrapeACETunes())
+print(bot.getEmojiRanking('general'))
