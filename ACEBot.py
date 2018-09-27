@@ -48,6 +48,7 @@ class acebot:
 
     def hasReply(self, message):
         return 'reply_count' in message
+<<<<<<< HEAD
 
     def refreshReply(self, message, CID):
         ts = message['ts']
@@ -69,6 +70,16 @@ class acebot:
             yield reply
 
     def getURI(self, url):
+=======
+    def getReplies(self,message,CID):
+        replies = self.apiCall("conversations.replies", channel=CID, ts=message['ts'])
+        replyData = replies['messages']
+        replyText = []
+        for text in replyData:
+            replyText.append(text['text'])
+        return replyText
+    def getURI(self,url):
+>>>>>>> Add files via upload
         if 'spotify' in url:
             return re.search('(?<=track\/)(.+?)(?=\?)', url).group()
         print("Not Matched: " + url)
@@ -82,11 +93,19 @@ class acebot:
     def gatherReplyHistory(self, history, CID):
         for message in history[CID]['messages']:
             if self.hasReply(message):
+<<<<<<< HEAD
                 self.getReply(message, CID)
 
     def iterateFullHistory(self, CID):
         self.getConversationHistory(CID)
         for message in self.history[CID]['messages']:
+=======
+                self.getReplies(message,CID)
+    def iterateFullHistory(self,CID):
+        if CID not in self.history:
+            self.getConversationHistory(CID)
+        for message in self.history[CID]:
+>>>>>>> Add files via upload
             if self.hasReply(message):
                 yield self.getReplies(message, CID)
             else:
