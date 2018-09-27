@@ -1,10 +1,17 @@
 import os
 from slackclient import SlackClient
 import re
-
+import spotipy
+import spotipy.util as util
+import html
 
 class acebot:
     def __init__(self):
+        self.username = 'Alexmooo'
+        self.scope = 'playlist-modify-public'
+        self.spotify_token = util.prompt_for_user_token(
+                                self.username, self.scope)
+        self.sp = spotipy.Spotify(self.spotify_token)
         slack_token = os.environ["SLACK_API_TOKEN"]
         self.sc = SlackClient(slack_token)
         self.channelList = self.apiCall("conversations.list",
@@ -18,8 +25,6 @@ class acebot:
         response = self.sc.api_call(method, **kwargs)
         if not response['ok']:
             print(response['error'])
-        if 'has_more' in response and response['has_more']:
-            print("Has More")
         return response
 
     def updateChannelList(self):
@@ -40,6 +45,7 @@ class acebot:
     def refreshConversationHistory(self, CID):
         self.history[CID] = self.apiCall("conversations.history",
                                          channel=CID)
+        # if response['has_more']:
 
     def getConversationHistory(self, CID):
         if CID not in self.history:
@@ -68,16 +74,29 @@ class acebot:
         for reply in self.getReply(message, CID):
             yield reply
 
+    def youtubeSearch(self, url):
+        uurl = html.unescape(url)
+        search = [i for i in uurl.split() if len(i) > 1]
+        result = self.sp.search(' '.join(search), limit=1, market='US')
+        if result['tracks']['total'] > 0:
+            return result['tracks']['items'][0]['id']
+        for n in range(1, len(search)):
+            result = self.sp.search(' '.join(search[:-n]), limit=1, market='US')
+            if result['tracks']['total'] > 0:
+                return result['tracks']['items'][0]['id']
+        return None
+
     def getURI(self, url):
-        if 'spotify' in url:
-            return re.search('(?<=track\/)(.+?)(?=\?)', url).group()
-        print("Not Matched: " + url)
+        if 'spotify' in url[0]:
+            return re.search('(?<=track\/)(.+?)(?=\?)', url[0]).group()
+        if 'youtu' in url[0]:
+            return self.youtubeSearch(url[1])
         return None
 
     def getAttachmentLinks(self, message):
         if 'attachments' in message:
             for attachment in message['attachments']:
-                yield attachment['original_url']
+                yield [attachment['original_url'], attachment['title']]
 
     def gatherReplyHistory(self, history, CID):
         for message in history[CID]['messages']:
@@ -103,6 +122,8 @@ class acebot:
             uri = self.getURI(url)
             if uri:
                 self.aceTunesURI.add(uri)
+            else:
+                print("Not Matched: " + url[0] + " Title: " + url[1])
         return self.aceTunesURI
 
     def getEmojiRanking(self, channelName):
@@ -119,5 +140,5 @@ class acebot:
 
 
 bot = acebot()
-# print(bot.scrapeACETunes())
-print(bot.getEmojiRanking('general'))
+print(bot.scrapeACETunes())
+# print(bot.getEmojiRanking('general'))
