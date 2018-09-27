@@ -49,6 +49,7 @@ class acebot:
     def hasReply(self, message):
         return 'reply_count' in message
 <<<<<<< HEAD
+<<<<<<< HEAD
 
     def refreshReply(self, message, CID):
         ts = message['ts']
@@ -71,6 +72,8 @@ class acebot:
 
     def getURI(self, url):
 =======
+=======
+>>>>>>> 0a95fa34b918910b38ebdccd4a01d3cfc26102d2
     def getReplies(self,message,CID):
         replies = self.apiCall("conversations.replies", channel=CID, ts=message['ts'])
         replyData = replies['messages']
@@ -94,12 +97,15 @@ class acebot:
         for message in history[CID]['messages']:
             if self.hasReply(message):
 <<<<<<< HEAD
+<<<<<<< HEAD
                 self.getReply(message, CID)
 
     def iterateFullHistory(self, CID):
         self.getConversationHistory(CID)
         for message in self.history[CID]['messages']:
 =======
+=======
+>>>>>>> 0a95fa34b918910b38ebdccd4a01d3cfc26102d2
                 self.getReplies(message,CID)
     def iterateFullHistory(self,CID):
         if CID not in self.history:
