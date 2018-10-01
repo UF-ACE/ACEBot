@@ -123,21 +123,19 @@ class acebot:
                     emoji[react['name']] += react['count']
         emoji = list(emoji.items())
         return(sorted(emoji, key=lambda x: x[1]))
-    def removeDuplicateSongs(self, username, playlist_id, tracks, scope='playlist-modify-public'):
-        # user_playlist_tracks
-        # user_playlist_remove_all_occurrences_of_tracks
-        token = util.prompt_for_user_token(username, scope)
-        if token:
-            sp = spotipy.Spotify(auth=token)
-            sp.trace = False
-            results = sp.user_playlist_remove_all_occurrences_of_tracks(username, playlist_id, tracks)
-            print results
+    def checkAndRemoveDuplicateSong(self, username, playlist_id, track_id, scope='playlist-modify-public'):
+        tracks_in_playlist = self.sp.user_playlist_tracks(username, playlist_id, limit=None)['items']
+    	for tracks in tracks_in_playlist:
+    	    if track_id[0] in tracks['track']['uri']:
+            	self.sp.trace = False
+            	results = self.sp.user_playlist_remove_all_occurrences_of_tracks(username, playlist_id, track_id)
+                return results
     def addSongToPlaylist(self, username, playlist_id, track_id=list, scope='playlist-modify-public'):
         # all inputs must be entered as a string
         # username should be the id not the uri
-        sp.trace = False
-        results = sp.user_playlist_add_tracks(user=username, playlist_id=playlist_id, tracks=track_id)
+        self.checkAndRemoveDuplicateSong(username, playlist_id, track_id)
+        self.sp.trace = False
+        results = self.sp.user_playlist_add_tracks(user=username, playlist_id=playlist_id, tracks=track_id)
         print results
-    # TODO: nice documentation for each function :^)
-    # TODO: function for checking duplicates
-    # TODO: spotify token refresh?
+# TODO: nice documentation for each function :^)
+# TODO: spotify token refresh?
