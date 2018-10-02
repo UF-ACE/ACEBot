@@ -111,7 +111,7 @@ class acebot:
                 self.aceTunesURI.add(uri)
             else:
                 print("Not Matched: " + url[0] + " Title: " + url[1])
-        return self.aceTunesURI
+        self.addSongToPlaylist("alexmooo","23FVTo7hhO05iNAqlVxGGu",self.aceTunesURI)
     def getEmojiRanking(self, channelName):
         CID = self.getChannelID(channelName)
         emoji = {}
@@ -125,10 +125,10 @@ class acebot:
         return(sorted(emoji, key=lambda x: x[1]))
     def checkAndRemoveDuplicateSong(self, username, playlist_id, track_id, scope='playlist-modify-public'):
         tracks_in_playlist = self.sp.user_playlist_tracks(username, playlist_id, limit=None)['items']
-    	for tracks in tracks_in_playlist:
-    	    if track_id[0] in tracks['track']['uri']:
-            	self.sp.trace = False
-            	results = self.sp.user_playlist_remove_all_occurrences_of_tracks(username, playlist_id, track_id)
+        for tracks in tracks_in_playlist:
+            if track_id[0] in tracks['track']['uri']:
+                self.sp.trace = False
+                results = self.sp.user_playlist_remove_all_occurrences_of_tracks(username, playlist_id, track_id)
                 return results
     def addSongToPlaylist(self, username, playlist_id, track_id=list, scope='playlist-modify-public'):
         # all inputs must be entered as a string
@@ -136,6 +136,6 @@ class acebot:
         self.checkAndRemoveDuplicateSong(username, playlist_id, track_id)
         self.sp.trace = False
         results = self.sp.user_playlist_add_tracks(user=username, playlist_id=playlist_id, tracks=track_id)
-        print results
+       # print results
 # TODO: nice documentation for each function :^)
 # TODO: spotify token refresh?
